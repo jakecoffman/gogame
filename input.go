@@ -20,6 +20,11 @@ var keyMap = []ebiten.Key{
 	ebiten.KeyDown,
 	ebiten.KeyLeft,
 
+	ebiten.KeyW,
+	ebiten.KeyA,
+	ebiten.KeyS,
+	ebiten.KeyD,
+
 	ebiten.KeyEscape,
 }
 
