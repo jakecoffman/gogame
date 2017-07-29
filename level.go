@@ -14,20 +14,21 @@ var staticLines []*chipmunk.Shape
 func LevelInit() {
 	// bounding box
 	space = chipmunk.NewSpace()
-	staticBody := chipmunk.NewBodyStatic()
-	s := vect.Float(size)
+
 	staticLines = []*chipmunk.Shape{
-		chipmunk.NewSegment(vect.Vect{0,0}, vect.Vect{s, 0}, 0),
-		chipmunk.NewSegment(vect.Vect{s,0}, vect.Vect{s, s}, 0),
-		chipmunk.NewSegment(vect.Vect{s,s}, vect.Vect{0, s}, 0),
-		chipmunk.NewSegment(vect.Vect{0,s}, vect.Vect{0, 0}, 0),
+		chipmunk.NewSegment(vect.Vect{0,0}, vect.Vect{size, 0}, 0),
+		chipmunk.NewSegment(vect.Vect{size,0}, vect.Vect{size, size}, 0),
+		chipmunk.NewSegment(vect.Vect{size,size}, vect.Vect{0, size}, 0),
+		chipmunk.NewSegment(vect.Vect{0,size}, vect.Vect{0, 0}, 0),
 	}
-	for _, segment := range staticLines {
+	for i, segment := range staticLines {
 		segment.SetElasticity(0.1)
+		staticBody := chipmunk.NewBodyStatic()
 		staticBody.AddShape(segment)
-		staticBody.CallbackHandler = &HandleCollisions{}
+		staticBody.CallbackHandler = &HandleCollisions{i}
+		space.AddBody(staticBody)
 	}
-	space.AddBody(staticBody)
+
 }
 
 func DrawLevel(screen *ebiten.Image) {
@@ -51,23 +52,23 @@ func DrawLevel(screen *ebiten.Image) {
 }
 
 type HandleCollisions struct {
-
+i int
 }
 
 func (h *HandleCollisions) CollisionEnter(arbiter *chipmunk.Arbiter) bool {
-	log.Println("CollisionEnter")
+	log.Println("CollisionEnter", h.i)
 	return false
 }
 
 func (h *HandleCollisions) CollisionPreSolve(arbiter *chipmunk.Arbiter) bool {
-	log.Println("CollisionPreSolve")
+	log.Println("CollisionPreSolve", h.i)
 	return false
 }
 
 func (h *HandleCollisions) CollisionPostSolve(arbiter *chipmunk.Arbiter) {
-	log.Println("CollisionPostSolve")
+	log.Println("CollisionPostSolve", h.i)
 }
 
 func (h *HandleCollisions) CollisionExit(arbiter *chipmunk.Arbiter) {
-	log.Println("CollisionExit")
+	log.Println("CollisionExit", h.i)
 }

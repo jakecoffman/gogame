@@ -17,7 +17,7 @@ var space *chipmunk.Space
 var input *Input
 var players []*Player
 
-var size = 400
+const size = 400
 
 func update(screen *ebiten.Image) error {
 	screen.Fill(color.NRGBA{0x00, 0x00, 0x00, 0xff})

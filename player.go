@@ -33,7 +33,7 @@ func NewPlayer(isLocal bool) *Player {
 	square, _ := ebiten.NewImage(playerWidth, playerHeight, ebiten.FilterNearest)
 
 	// chipmunk origin is the bottom left corner
-	box := chipmunk.NewBox(vect.Vect{startX, startY}, playerWidth, playerHeight)
+	box := chipmunk.NewBox(vect.Vect{0, 0}, playerWidth, playerHeight)
 	box.SetElasticity(0.5)
 	box.SetFriction(5.0)
 
@@ -89,5 +89,5 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	opts.GeoM.Translate(float64(p.Shape.Body.Position().X), float64(p.Shape.Body.Position().Y))
 	screen.DrawImage(p.Image, opts)
 
-	ebitenutil.DebugPrint(screen, fmt.Sprint("\nPlayer ", p.Shape.Body.Position(), p.Shape.BB.Upper, ",", p.Shape.BB.Lower))
+	ebitenutil.DebugPrint(screen, fmt.Sprint("\nPlayer ", p.Shape.Body.Position()))
 }
