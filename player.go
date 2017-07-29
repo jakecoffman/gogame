@@ -74,7 +74,7 @@ func (p *Player) Update() {
 
 		vx2 := math.Cos(float64(p.Shape.Body.Angle() * chipmunk.DegreeConst))
 		vy2 := math.Sin(float64(p.Shape.Body.Angle() * chipmunk.DegreeConst))
-		svx2, svy2 := velocity* float32(vx2), velocity* float32(vy2)
+		svx2, svy2 := velocity * float32(vx2), velocity * float32(vy2)
 		p.Shape.Body.SetVelocity(svx2, svy2)
 	}
 }
@@ -86,7 +86,7 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	opts = &ebiten.DrawImageOptions{}
 	opts.GeoM.Translate(-playerWidth/2, -playerHeight/2)
 	opts.GeoM.Rotate(float64(p.Shape.Body.Angle() * chipmunk.DegreeConst))
-	opts.GeoM.Translate(float64(p.Shape.Body.Position().X), float64(size) - playerWidth - float64(p.Shape.Body.Position().Y))
+	opts.GeoM.Translate(float64(p.Shape.Body.Position().X), float64(p.Shape.Body.Position().Y))
 	screen.DrawImage(p.Image, opts)
 
 	ebitenutil.DebugPrint(screen, fmt.Sprint("\nPlayer ", p.Shape.Body.Position(), p.Shape.BB.Upper, ",", p.Shape.BB.Lower))
