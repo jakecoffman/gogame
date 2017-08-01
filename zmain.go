@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image/color"
 	"log"
-
 	"errors"
 
 	"github.com/hajimehoshi/ebiten"
@@ -15,11 +14,18 @@ import (
 var space *chipmunk.Space
 
 var input *Input
-var players []*Player
+var players map[int8]*Player
+var me *Player
 
 const size = 400
 
+func init() {
+	players = map[int8]*Player{}
+}
+
 func update(screen *ebiten.Image) error {
+	Process()
+
 	screen.Fill(color.NRGBA{0x00, 0x00, 0x00, 0xff})
 
 	input.Update()
@@ -50,16 +56,28 @@ func update(screen *ebiten.Image) error {
 
 func Run() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	log.Println("Game starting")
 	defer func() { log.Println("Game ended") }()
+
+	NetInit()
+	defer func() { log.Println(NetClose()) }()
 
 	input = NewInput()
 
 	LevelInit()
 
-	players = []*Player{NewPlayer(true)}
+	title := "Server"
 
-	if err := ebiten.Run(update, size, size, 1, "Hello, world!"); err != nil {
+	if !isServer {
+		join := Join{}
+		log.Println("Sending JOIN command")
+
+		Send(join.Marshal(), serverAddr)
+		title = "Client"
+	}
+
+	if err := ebiten.Run(update, size, size, 1, title); err != nil {
 		log.Fatal(err)
 	}
 }

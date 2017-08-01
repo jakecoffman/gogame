@@ -6,15 +6,15 @@ import (
 	"github.com/hajimehoshi/ebiten"
 	"github.com/vova616/chipmunk"
 	"github.com/vova616/chipmunk/vect"
-	"math"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"fmt"
+	"net"
 )
 
 const (
-	startX = 128.0
-	startY = 128.0
-	playerWidth = 32.0
+	startX       = 128.0
+	startY       = 128.0
+	playerWidth  = 32.0
 	playerHeight = 32.0
 
 	maxSpeed  float32 = 100.0
@@ -22,14 +22,16 @@ const (
 )
 
 type Player struct {
+	ID      int8
 	IsLocal bool
+	addr    *net.UDPAddr `gob:"-"`
 
 	Shape *chipmunk.Shape
 
 	Image *ebiten.Image
 }
 
-func NewPlayer(isLocal bool) *Player {
+func NewPlayer(isLocal bool, addr *net.UDPAddr) *Player {
 	square, _ := ebiten.NewImage(playerWidth, playerHeight, ebiten.FilterNearest)
 
 	// chipmunk origin is the bottom left corner
@@ -47,8 +49,9 @@ func NewPlayer(isLocal bool) *Player {
 
 	return &Player{
 		IsLocal: isLocal,
+		addr:    addr,
 		Image:   square,
-		Shape: box,
+		Shape:   box,
 	}
 }
 
@@ -62,8 +65,6 @@ func (p *Player) Update() {
 			angularVelocity = maxTorque
 		}
 
-		p.Shape.Body.SetAngularVelocity(angularVelocity)
-
 		var velocity float32 = 0.0
 		if input.keyState[ebiten.KeyW] == 1 {
 			velocity = maxSpeed * -1
@@ -72,10 +73,8 @@ func (p *Player) Update() {
 			velocity = maxSpeed
 		}
 
-		vx2 := math.Cos(float64(p.Shape.Body.Angle() * chipmunk.DegreeConst))
-		vy2 := math.Sin(float64(p.Shape.Body.Angle() * chipmunk.DegreeConst))
-		svx2, svy2 := velocity * float32(vx2), velocity * float32(vy2)
-		p.Shape.Body.SetVelocity(svx2, svy2)
+		move := &Move{angularVelocity, velocity}
+		Send(move.Serialize(), serverAddr)
 	}
 }
 

@@ -5,7 +5,6 @@ import (
 	"github.com/vova616/chipmunk/vect"
 	"github.com/hajimehoshi/ebiten"
 	"image/color"
-	"log"
 )
 
 // TODO this is stupid to store it as an interface
@@ -21,14 +20,13 @@ func LevelInit() {
 		chipmunk.NewSegment(vect.Vect{size,size}, vect.Vect{0, size}, 0),
 		chipmunk.NewSegment(vect.Vect{0,size}, vect.Vect{0, 0}, 0),
 	}
-	for i, segment := range staticLines {
+	for _, segment := range staticLines {
 		segment.SetElasticity(0.1)
 		staticBody := chipmunk.NewBodyStatic()
 		staticBody.AddShape(segment)
-		staticBody.CallbackHandler = &HandleCollisions{i}
+		staticBody.CallbackHandler = &HandleCollisions{}
 		space.AddBody(staticBody)
 	}
-
 }
 
 func DrawLevel(screen *ebiten.Image) {
@@ -52,23 +50,23 @@ func DrawLevel(screen *ebiten.Image) {
 }
 
 type HandleCollisions struct {
-i int
+
 }
 
 func (h *HandleCollisions) CollisionEnter(arbiter *chipmunk.Arbiter) bool {
-	log.Println("CollisionEnter", h.i)
-	return false
+
+	return true
 }
 
 func (h *HandleCollisions) CollisionPreSolve(arbiter *chipmunk.Arbiter) bool {
-	log.Println("CollisionPreSolve", h.i)
-	return false
+
+	return true
 }
 
 func (h *HandleCollisions) CollisionPostSolve(arbiter *chipmunk.Arbiter) {
-	log.Println("CollisionPostSolve", h.i)
+
 }
 
 func (h *HandleCollisions) CollisionExit(arbiter *chipmunk.Arbiter) {
-	log.Println("CollisionExit", h.i)
+
 }
