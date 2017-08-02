@@ -2,8 +2,8 @@ package main
 
 import (
 	"log"
+	"time"
 
-	"github.com/hajimehoshi/ebiten"
 	"github.com/jakecoffman/gogame"
 )
 
@@ -13,18 +13,18 @@ func main() {
 	log.Println("Game starting")
 	defer func() { log.Println("Game ended") }()
 
+	gogame.IsServer = true
 	gogame.NetInit()
 	defer func() { log.Println(gogame.NetClose()) }()
 
-	gogame.Input = gogame.NewInput()
 	gogame.LevelInit()
 
-	join := &gogame.Join{}
-	log.Println("Sending JOIN command")
+	tick := time.Tick(16 * time.Millisecond)
 
-	gogame.Send(join.Marshal(), gogame.ServerAddr)
-
-	if err := ebiten.Run(gogame.Update, gogame.Size, gogame.Size, 1, "Client"); err != nil {
-		log.Fatal(err)
+	for {
+		select {
+		case <-tick:
+			gogame.Update(nil)
+		}
 	}
 }

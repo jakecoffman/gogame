@@ -1,10 +1,9 @@
 package gogame
 
 import (
+	"errors"
 	"fmt"
 	"image/color"
-	"log"
-	"errors"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -13,71 +12,54 @@ import (
 
 var space *chipmunk.Space
 
-var input *Input
-var players map[int8]*Player
-var me *Player
+var Input *input
+var Players map[int8]*Player
 
-const size = 400
+// Server only lookup of addr to ID
+var Lookup map[string]int8
+var Me int8
+
+const Size = 400
 
 func init() {
-	players = map[int8]*Player{}
+	Players = map[int8]*Player{}
+	Lookup = map[string]int8{}
 }
 
-func update(screen *ebiten.Image) error {
+func Update(screen *ebiten.Image) error {
 	Process()
 
-	screen.Fill(color.NRGBA{0x00, 0x00, 0x00, 0xff})
+	if !IsServer {
+		screen.Fill(color.NRGBA{0x00, 0x00, 0x00, 0xff})
 
-	input.Update()
+		Input.Update()
 
-	if input.keyState[ebiten.KeyEscape] == 1 {
-		return errors.New("Player quit")
+		if Input.keyState[ebiten.KeyEscape] == 1 {
+			return errors.New("Player quit")
+		}
+		if Input.keyState[ebiten.KeyF10] == 1 {
+			panic("User invoked crash")
+		}
 	}
 
-	for _, player := range players {
+	for _, player := range Players {
 		player.Update()
 	}
 
-	space.Step(1.0/60.0)
+	space.Step(1.0 / 60.0)
 
-	if ebiten.IsRunningSlowly() {
-		return nil
+	if !IsServer {
+		if ebiten.IsRunningSlowly() {
+			return nil
+		}
+
+		DrawLevel(screen)
+
+		for _, player := range Players {
+			player.Draw(screen)
+		}
+
+		ebitenutil.DebugPrint(screen, fmt.Sprintf("%f", ebiten.CurrentFPS()))
 	}
-
-	DrawLevel(screen)
-
-	for _, player := range players {
-		player.Draw(screen)
-	}
-
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("%f", ebiten.CurrentFPS()))
 	return nil
-}
-
-func Run() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
-	log.Println("Game starting")
-	defer func() { log.Println("Game ended") }()
-
-	NetInit()
-	defer func() { log.Println(NetClose()) }()
-
-	input = NewInput()
-
-	LevelInit()
-
-	title := "Server"
-
-	if !isServer {
-		join := Join{}
-		log.Println("Sending JOIN command")
-
-		Send(join.Marshal(), serverAddr)
-		title = "Client"
-	}
-
-	if err := ebiten.Run(update, size, size, 1, title); err != nil {
-		log.Fatal(err)
-	}
 }

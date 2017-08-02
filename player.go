@@ -1,14 +1,14 @@
 package gogame
 
 import (
+	"fmt"
 	"image/color"
+	"net"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/vova616/chipmunk"
 	"github.com/vova616/chipmunk/vect"
-	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"fmt"
-	"net"
 )
 
 const (
@@ -22,16 +22,19 @@ const (
 )
 
 type Player struct {
-	ID      int8
-	IsLocal bool
-	addr    *net.UDPAddr `gob:"-"`
+	ID   int8
+	addr *net.UDPAddr
 
 	Shape *chipmunk.Shape
 
 	Image *ebiten.Image
 }
 
-func NewPlayer(isLocal bool, addr *net.UDPAddr) *Player {
+func (p *Player) IsLocal() bool {
+	return !IsServer && p.ID == Me
+}
+
+func NewPlayer() *Player {
 	square, _ := ebiten.NewImage(playerWidth, playerHeight, ebiten.FilterNearest)
 
 	// chipmunk origin is the bottom left corner
@@ -48,33 +51,37 @@ func NewPlayer(isLocal bool, addr *net.UDPAddr) *Player {
 	space.AddBody(body)
 
 	return &Player{
-		IsLocal: isLocal,
-		addr:    addr,
-		Image:   square,
-		Shape:   box,
+		Image: square,
+		Shape: box,
 	}
 }
 
+var lastAngularVelocity, lastVelocity float32
+
 func (p *Player) Update() {
-	if p.IsLocal {
-		var angularVelocity float32 = 0.0
-		if input.keyState[ebiten.KeyA] == 1 {
+	if p.IsLocal() {
+		var angularVelocity float32
+		if Input.keyState[ebiten.KeyA] == 1 {
 			angularVelocity = maxTorque * -1
 		}
-		if input.keyState[ebiten.KeyD] == 1 {
+		if Input.keyState[ebiten.KeyD] == 1 {
 			angularVelocity = maxTorque
 		}
 
-		var velocity float32 = 0.0
-		if input.keyState[ebiten.KeyW] == 1 {
+		var velocity float32
+		if Input.keyState[ebiten.KeyW] == 1 {
 			velocity = maxSpeed * -1
 		}
-		if input.keyState[ebiten.KeyS] == 1 {
+		if Input.keyState[ebiten.KeyS] == 1 {
 			velocity = maxSpeed
 		}
 
-		move := &Move{angularVelocity, velocity}
-		Send(move.Serialize(), serverAddr)
+		if lastAngularVelocity != angularVelocity || lastVelocity != velocity {
+			lastAngularVelocity = angularVelocity
+			lastVelocity = velocity
+			move := &Move{AngularVelocity: angularVelocity, Velocity: velocity}
+			Send(move.Marshal(), ServerAddr)
+		}
 	}
 }
 

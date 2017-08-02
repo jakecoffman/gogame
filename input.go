@@ -2,12 +2,12 @@ package gogame
 
 import "github.com/hajimehoshi/ebiten"
 
-type Input struct {
+type input struct {
 	keyState map[ebiten.Key]int
 }
 
-func NewInput() *Input {
-	return &Input{
+func NewInput() *input {
+	return &input{
 		keyState: map[ebiten.Key]int{},
 	}
 }
@@ -26,9 +26,10 @@ var keyMap = []ebiten.Key{
 	ebiten.KeyD,
 
 	ebiten.KeyEscape,
+	ebiten.KeyF10,
 }
 
-func (i *Input) Update() {
+func (i *input) Update() {
 	for _, k := range keyMap {
 		if ebiten.IsKeyPressed(k) {
 			i.keyState[k] = 1
