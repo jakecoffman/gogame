@@ -15,7 +15,7 @@ var space *chipmunk.Space
 var Input *input
 var Players map[int8]*Player
 
-// Server only lookup of addr to ID
+// Server only lookup of Addr to ID
 var Lookup map[string]int8
 var Me int8
 

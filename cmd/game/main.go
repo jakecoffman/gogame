@@ -24,6 +24,8 @@ func main() {
 
 	gogame.Send(join.Marshal(), gogame.ServerAddr)
 
+	ebiten.SetRunnableInBackground(true)
+
 	if err := ebiten.Run(gogame.Update, gogame.Size, gogame.Size, 1, "Client"); err != nil {
 		log.Fatal(err)
 	}

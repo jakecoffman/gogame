@@ -23,7 +23,7 @@ const (
 
 type Player struct {
 	ID   int8
-	addr *net.UDPAddr
+	Addr *net.UDPAddr
 
 	Shape *chipmunk.Shape
 
@@ -56,30 +56,42 @@ func NewPlayer() *Player {
 	}
 }
 
-var lastAngularVelocity, lastVelocity float32
+func (p *Player) Location() *Location {
+	return &Location{
+		ID:              p.ID,
+		X:               float32(p.Shape.Body.Position().X),
+		Y:               float32(p.Shape.Body.Position().Y),
+		Angle:           float32(p.Shape.Body.Angle()),
+		AngularVelocity: float32(p.Shape.Body.AngularVelocity()),
+		Vx:              float32(p.Shape.Body.Velocity().X),
+		Vy:              float32(p.Shape.Body.Velocity().Y),
+	}
+}
+
+var lastTurn, lastThrottle float32
 
 func (p *Player) Update() {
 	if p.IsLocal() {
-		var angularVelocity float32
+		var turn float32
 		if Input.keyState[ebiten.KeyA] == 1 {
-			angularVelocity = maxTorque * -1
+			turn = maxTorque * -1
 		}
 		if Input.keyState[ebiten.KeyD] == 1 {
-			angularVelocity = maxTorque
+			turn = maxTorque
 		}
 
-		var velocity float32
+		var throttle float32
 		if Input.keyState[ebiten.KeyW] == 1 {
-			velocity = maxSpeed * -1
+			throttle = maxSpeed * -1
 		}
 		if Input.keyState[ebiten.KeyS] == 1 {
-			velocity = maxSpeed
+			throttle = maxSpeed
 		}
 
-		if lastAngularVelocity != angularVelocity || lastVelocity != velocity {
-			lastAngularVelocity = angularVelocity
-			lastVelocity = velocity
-			move := &Move{AngularVelocity: angularVelocity, Velocity: velocity}
+		if lastTurn != turn || lastThrottle != throttle {
+			lastTurn = turn
+			lastThrottle = throttle
+			move := &Move{Turn: turn, Throttle: throttle}
 			Send(move.Marshal(), ServerAddr)
 		}
 	}
