@@ -2,7 +2,6 @@ package gogame
 
 import (
 	"bytes"
-	"encoding/binary"
 	"log"
 	"math"
 	"net"
@@ -34,7 +33,11 @@ func (m *Move) Handle(addr *net.UDPAddr) error {
 	player.Shape.Body.SetVelocity(svx2, svy2)
 
 	// Send immediate location update to everyone
-	location := player.Location().Marshal()
+	location, err := player.Location().MarshalBinary()
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 	for _, p := range Players {
 		Send(location, p.Addr)
 	}
@@ -42,26 +45,14 @@ func (m *Move) Handle(addr *net.UDPAddr) error {
 	return nil
 }
 
-func (m *Move) Marshal() []byte {
+func (m *Move) MarshalBinary() ([]byte, error) {
 	buf := bytes.NewBuffer([]byte{MOVE})
-	fields := []*float32{&m.Turn, &m.Throttle}
-	var err error
-	for _, field := range fields {
-		err = binary.Write(buf, binary.LittleEndian, field)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	return buf.Bytes()
+	fields := []interface{}{&m.Turn, &m.Throttle}
+	return Marshal(fields, buf)
 }
 
-func (m *Move) Unmarshal(b []byte) {
+func (m *Move) UnmarshalBinary(b []byte) error {
 	reader := bytes.NewReader(b[1:])
-	fields := []*float32{&m.Turn, &m.Throttle}
-	for _, field := range fields {
-		err := binary.Read(reader, binary.LittleEndian, field)
-		if err != nil {
-			log.Println(err)
-		}
-	}
+	fields := []interface{}{&m.Turn, &m.Throttle}
+	return Unmarshal(fields, reader)
 }

@@ -22,7 +22,11 @@ func main() {
 	join := &gogame.Join{}
 	log.Println("Sending JOIN command")
 
-	gogame.Send(join.Marshal(), gogame.ServerAddr)
+	b, err := join.MarshalBinary()
+	if err != nil {
+		log.Fatal(err)
+	}
+	gogame.Send(b, gogame.ServerAddr)
 
 	ebiten.SetRunnableInBackground(true)
 

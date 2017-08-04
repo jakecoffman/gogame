@@ -22,18 +22,41 @@ func (j *Join) Handle(addr *net.UDPAddr) error {
 		curId++
 		Lookup[addr.String()] = player.ID
 		// tell this player their ID
-		Send((&Join{ID: player.ID, You: true}).Marshal(), addr)
-		loc := player.Location().Marshal()
+		b, err := (&Join{ID: player.ID, You: true}).MarshalBinary()
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+		Send(b, addr)
+		loc, err := player.Location().MarshalBinary()
+		if err != nil {
+			log.Println(err)
+			return err
+		}
 		// tell this player where they are
 		Send(loc, addr)
-		joinMsg := Join{player.ID, false}.Marshal()
+		joinBytes, err := Join{player.ID, false}.MarshalBinary()
+		if err != nil {
+			log.Println(err)
+			return err
+		}
 		for _, p := range Players {
 			// tell all players about this player
-			Send(joinMsg, p.Addr)
+			Send(joinBytes, p.Addr)
 			Send(loc, p.Addr)
 			// tell this player where all the existing players are
-			Send(Join{p.ID, false}.Marshal(), player.Addr)
-			Send(p.Location().Marshal(), player.Addr)
+			b, err = (&Join{p.ID, false}).MarshalBinary()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			Send(b, player.Addr)
+			b, err = p.Location().MarshalBinary()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			Send(b, player.Addr)
 		}
 	} else {
 		log.Println("Player joined")
@@ -41,6 +64,8 @@ func (j *Join) Handle(addr *net.UDPAddr) error {
 		if j.You {
 			log.Println("Oh, it's me!")
 			Me = player.ID
+			// now that I am joined I will start pinging the server
+			go PingRegularly()
 		}
 	}
 	Players[player.ID] = player
@@ -48,19 +73,20 @@ func (j *Join) Handle(addr *net.UDPAddr) error {
 	return nil
 }
 
-func (j Join) Marshal() []byte {
+func (j Join) MarshalBinary() ([]byte, error) {
 	if j.You {
-		return []byte{JOIN, byte(j.ID), 1}
+		return []byte{JOIN, byte(j.ID), 1}, nil
 	} else {
-		return []byte{JOIN, byte(j.ID), 0}
+		return []byte{JOIN, byte(j.ID), 0}, nil
 	}
 }
 
-func (j *Join) Unmarshal(b []byte) {
+func (j *Join) UnmarshalBinary(b []byte) error {
 	j.ID = int8(b[1])
 	if b[2] == 0 {
 		j.You = false
 	} else {
 		j.You = true
 	}
+	return nil
 }

@@ -5,6 +5,8 @@ import (
 	"image/color"
 	"net"
 
+	"log"
+
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/vova616/chipmunk"
@@ -92,7 +94,12 @@ func (p *Player) Update() {
 			lastTurn = turn
 			lastThrottle = throttle
 			move := &Move{Turn: turn, Throttle: throttle}
-			Send(move.Marshal(), ServerAddr)
+			bin, err := move.MarshalBinary()
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			Send(bin, ServerAddr)
 		}
 	}
 }
@@ -107,5 +114,7 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	opts.GeoM.Translate(float64(p.Shape.Body.Position().X), float64(p.Shape.Body.Position().Y))
 	screen.DrawImage(p.Image, opts)
 
-	ebitenutil.DebugPrint(screen, fmt.Sprint("\nPlayer ", p.Shape.Body.Position()))
+	if p.IsLocal() {
+		ebitenutil.DebugPrint(screen, fmt.Sprint("\nPlayer ", p.Shape.Body.Position(), "\n", ))
+	}
 }

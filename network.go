@@ -2,8 +2,11 @@ package gogame
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/binary"
 	"log"
 	"net"
+	"encoding"
 )
 
 var ServerAddr *net.UDPAddr
@@ -73,11 +76,25 @@ func Recv() {
 			handler = &Move{}
 		case LOCATION:
 			handler = &Location{}
+		case PING:
+			handler = &Ping{}
+			// just handle the ping here immediately outside of the game loop
+			err = handler.UnmarshalBinary(data)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			handler.Handle(addr)
+			continue
 		default:
 			log.Println("Unkown message type", data[0])
 			continue
 		}
-		handler.Unmarshal(data)
+		err = handler.UnmarshalBinary(data)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
 		select {
 		case incomings <- Incoming{handler, addr}:
 		default:
@@ -120,10 +137,34 @@ const (
 	JOIN = iota
 	MOVE
 	LOCATION
+	PING
 )
 
 type Handler interface {
 	Handle(addr *net.UDPAddr) error
-	Marshal() []byte
-	Unmarshal(b []byte)
+	encoding.BinaryMarshaler
+	encoding.BinaryUnmarshaler
+}
+
+func Marshal(fields []interface{}, buf *bytes.Buffer) ([]byte, error) {
+	var err error
+	for _, field := range fields {
+		err = binary.Write(buf, binary.LittleEndian, field)
+		if err != nil {
+			log.Fatal(err)
+			return nil, err
+		}
+	}
+	return buf.Bytes(), nil
+}
+
+func Unmarshal(fields []interface{}, reader *bytes.Reader) error {
+	for _, field := range fields {
+		err := binary.Read(reader, binary.LittleEndian, field)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+	}
+	return nil
 }

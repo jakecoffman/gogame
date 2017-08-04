@@ -2,7 +2,6 @@ package gogame
 
 import (
 	"bytes"
-	"encoding/binary"
 	"log"
 	"net"
 
@@ -37,27 +36,15 @@ func (l *Location) Handle(addr *net.UDPAddr) error {
 	return nil
 }
 
-func (l *Location) Marshal() []byte {
+func (l *Location) MarshalBinary() ([]byte, error) {
 	buf := bytes.NewBuffer([]byte{LOCATION, byte(l.ID)})
-	fields := []*float32{&l.X, &l.Y, &l.Vx, &l.Vy, &l.Angle, &l.AngularVelocity}
-	var err error
-	for _, field := range fields {
-		err = binary.Write(buf, binary.LittleEndian, field)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	return buf.Bytes()
+	fields := []interface{}{&l.X, &l.Y, &l.Vx, &l.Vy, &l.Angle, &l.AngularVelocity}
+	return Marshal(fields, buf)
 }
 
-func (l *Location) Unmarshal(b []byte) {
+func (l *Location) UnmarshalBinary(b []byte) error {
 	l.ID = int8(b[1])
 	reader := bytes.NewReader(b[2:])
-	fields := []*float32{&l.X, &l.Y, &l.Vx, &l.Vy, &l.Angle, &l.AngularVelocity}
-	for _, field := range fields {
-		err := binary.Read(reader, binary.LittleEndian, field)
-		if err != nil {
-			log.Println(err)
-		}
-	}
+	fields := []interface{}{&l.X, &l.Y, &l.Vx, &l.Vy, &l.Angle, &l.AngularVelocity}
+	return Unmarshal(fields, reader)
 }
