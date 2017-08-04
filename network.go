@@ -3,10 +3,20 @@ package gogame
 import (
 	"bufio"
 	"bytes"
+	"encoding"
 	"encoding/binary"
 	"log"
 	"net"
-	"encoding"
+)
+
+const SimulatedNetworkLatencyMS = 100
+
+// Message type IDs
+const (
+	JOIN = iota
+	MOVE
+	LOCATION
+	PING
 )
 
 var ServerAddr *net.UDPAddr
@@ -18,7 +28,13 @@ type Incoming struct {
 	addr    *net.UDPAddr
 }
 
+type Outgoing struct {
+	data []byte
+	addr *net.UDPAddr
+}
+
 var incomings chan Incoming
+var outgoings chan Outgoing
 
 func init() {
 	ServerAddr = &net.UDPAddr{
@@ -26,6 +42,7 @@ func init() {
 		IP:   net.ParseIP("127.0.0.1"),
 	}
 	incomings = make(chan Incoming, 100)
+	outgoings = make(chan Outgoing, 100)
 }
 
 func NetInit() {
@@ -46,12 +63,19 @@ func NetInit() {
 	udpConn.SetReadBuffer(1048576)
 
 	go Recv()
+
+	if IsServer {
+		go ProcessOutgoingServer()
+	} else {
+		go ProcessingOutgoingClient()
+	}
 }
 
 func NetClose() error {
 	return udpConn.Close()
 }
 
+// Recv runs in a goroutine and un-marshals incoming data, queuing it up for ProcessIncoming to handle
 func Recv() {
 	for {
 		data := make([]byte, 2048)
@@ -95,15 +119,19 @@ func Recv() {
 			log.Println(err)
 			continue
 		}
+		//go func(){
+		//	time.Sleep(SimulatedNetworkLatencyMS/2 * time.Millisecond)
 		select {
 		case incomings <- Incoming{handler, addr}:
 		default:
 			log.Println("Error: queue is full, dropping message")
 		}
+		//}()
 	}
 }
 
-func Process() {
+// ProcessIncoming handles all incoming messages that are queued
+func ProcessIncoming() {
 	var err error
 	for {
 		select {
@@ -118,27 +146,35 @@ func Process() {
 	}
 }
 
+// Send queues up an outgoing byte array to be sent immediately so sending isn't blocking
 func Send(data []byte, addr *net.UDPAddr) {
-	if IsServer {
-		_, err := udpConn.WriteToUDP(data, addr)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		_, err := udpConn.Write(data)
+	//go func() {
+	//	time.Sleep(SimulatedNetworkLatencyMS / 2 * time.Millisecond)
+	outgoings <- Outgoing{data: data, addr: addr}
+	//}()
+}
+
+func ProcessOutgoingServer() {
+	var outgoing Outgoing
+	for {
+		outgoing = <-outgoings
+		_, err := udpConn.WriteToUDP(outgoing.data, outgoing.addr)
 		if err != nil {
 			panic(err)
 		}
 	}
 }
 
-// Message type IDs
-const (
-	JOIN = iota
-	MOVE
-	LOCATION
-	PING
-)
+func ProcessingOutgoingClient() {
+	var outgoing Outgoing
+	for {
+		outgoing = <-outgoings
+		_, err := udpConn.Write(outgoing.data)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
 
 type Handler interface {
 	Handle(addr *net.UDPAddr) error

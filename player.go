@@ -3,9 +3,8 @@ package gogame
 import (
 	"fmt"
 	"image/color"
-	"net"
-
 	"log"
+	"net"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
@@ -41,7 +40,7 @@ func NewPlayer() *Player {
 
 	// chipmunk origin is the bottom left corner
 	box := chipmunk.NewBox(vect.Vect{0, 0}, playerWidth, playerHeight)
-	box.SetElasticity(0.5)
+	box.SetElasticity(0.0)
 	box.SetFriction(5.0)
 
 	body := chipmunk.NewBody(1.0, box.Moment(1.0))
@@ -70,8 +69,6 @@ func (p *Player) Location() *Location {
 	}
 }
 
-var lastTurn, lastThrottle float32
-
 func (p *Player) Update() {
 	if p.IsLocal() {
 		var turn float32
@@ -90,17 +87,12 @@ func (p *Player) Update() {
 			throttle = maxSpeed
 		}
 
-		if lastTurn != turn || lastThrottle != throttle {
-			lastTurn = turn
-			lastThrottle = throttle
-			move := &Move{Turn: turn, Throttle: throttle}
-			bin, err := move.MarshalBinary()
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			Send(bin, ServerAddr)
+		bin, err := (&Move{Turn: turn, Throttle: throttle}).MarshalBinary()
+		if err != nil {
+			log.Println(err)
+			return
 		}
+		Send(bin, ServerAddr)
 	}
 }
 
@@ -115,6 +107,6 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	screen.DrawImage(p.Image, opts)
 
 	if p.IsLocal() {
-		ebitenutil.DebugPrint(screen, fmt.Sprint("\nPlayer ", p.Shape.Body.Position(), "\n", ))
+		ebitenutil.DebugPrint(screen, fmt.Sprintf("\nPlayer %v\nPing %v", p.Shape.Body.Position(), LastPing.Get()))
 	}
 }

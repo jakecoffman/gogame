@@ -4,8 +4,32 @@ import (
 	"bytes"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
+
+var LastPing *lastPing
+
+func init() {
+	LastPing = &lastPing{}
+}
+
+type lastPing struct {
+	sync.RWMutex
+	Duration time.Duration
+}
+
+func (l *lastPing) Set(d time.Duration) {
+	l.Lock()
+	l.Duration = d
+	l.Unlock()
+}
+
+func (l *lastPing) Get() time.Duration {
+	l.RLock()
+	defer l.RUnlock()
+	return l.Duration
+}
 
 type Ping struct {
 	Sent time.Time
@@ -14,8 +38,8 @@ type Ping struct {
 func (p *Ping) Handle(addr *net.UDPAddr) error {
 	if IsServer {
 		// got a ping
-		player := Players[Lookup[addr.String()]]
-		log.Println("Player", player.ID, "ping", time.Since(p.Sent)*2)
+		// TODO store pings for players to show on server status
+		//player := Players[Lookup[addr.String()]]
 		bin, err := p.MarshalBinary()
 		if err != nil {
 			log.Println(err)
@@ -24,7 +48,8 @@ func (p *Ping) Handle(addr *net.UDPAddr) error {
 		Send(bin, addr)
 	} else {
 		// got a pong
-		log.Println("Ping", time.Since(p.Sent))
+		d := time.Since(p.Sent)
+		LastPing.Set(d)
 	}
 	return nil
 }
@@ -48,6 +73,7 @@ func (p *Ping) UnmarshalBinary(b []byte) error {
 var done chan struct{}
 
 func PingRegularly() {
+	PingNow()
 	done = make(chan struct{})
 	tick := time.Tick(3 * time.Second)
 	for {
@@ -56,13 +82,17 @@ func PingRegularly() {
 			close(done)
 			return
 		case <-tick:
-			ping := &Ping{Sent: time.Now()}
-			bin, err := ping.MarshalBinary()
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			Send(bin, ServerAddr)
+			PingNow()
 		}
 	}
+}
+
+func PingNow() {
+	ping := &Ping{Sent: time.Now()}
+	bin, err := ping.MarshalBinary()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	Send(bin, ServerAddr)
 }

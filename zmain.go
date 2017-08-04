@@ -27,7 +27,7 @@ func init() {
 }
 
 func Update(screen *ebiten.Image) error {
-	Process()
+	ProcessIncoming()
 
 	if !IsServer {
 		screen.Fill(color.NRGBA{0x00, 0x00, 0x00, 0xff})
