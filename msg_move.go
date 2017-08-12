@@ -5,13 +5,11 @@ import (
 	"log"
 	"math"
 	"net"
-
-	"github.com/vova616/chipmunk"
 )
 
 // Sent to server only: Move relays inputs related to movement
 type Move struct {
-	Turn, Throttle float32
+	Turn, Throttle float64
 }
 
 func (m *Move) Handle(addr *net.UDPAddr) error {
@@ -26,11 +24,11 @@ func (m *Move) Handle(addr *net.UDPAddr) error {
 		return nil
 	}
 
-	player.Shape.Body.SetAngularVelocity(m.Turn)
-	vx2 := math.Cos(float64(player.Shape.Body.Angle() * chipmunk.DegreeConst))
-	vy2 := math.Sin(float64(player.Shape.Body.Angle() * chipmunk.DegreeConst))
-	svx2, svy2 := m.Throttle*float32(vx2), m.Throttle*float32(vy2)
-	player.Shape.Body.SetVelocity(svx2, svy2)
+	player.Shape.Body().SetAngularVelocity(m.Turn)
+	vx2 := math.Cos(float64(player.Shape.Body().Angle()))
+	vy2 := math.Sin(float64(player.Shape.Body().Angle()))
+	svx2, svy2 := m.Throttle*vx2, m.Throttle*vy2
+	player.Shape.Body().SetVelocity(svx2, svy2)
 
 	// Send immediate location update to everyone
 	location, err := player.Location().MarshalBinary()

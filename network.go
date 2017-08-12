@@ -84,12 +84,14 @@ func Recv() {
 		if IsServer {
 			_, addr, err = udpConn.ReadFromUDP(data)
 			if err != nil {
-				panic(err)
+				log.Println(err)
+				return
 			}
 		} else {
 			_, err = bufio.NewReader(udpConn).Read(data)
 			if err != nil {
-				panic(err)
+				log.Println(err)
+				return
 			}
 		}
 		var handler Handler
@@ -160,7 +162,8 @@ func ProcessOutgoingServer() {
 		outgoing = <-outgoings
 		_, err := udpConn.WriteToUDP(outgoing.data, outgoing.addr)
 		if err != nil {
-			panic(err)
+			log.Println(err)
+			return
 		}
 	}
 }

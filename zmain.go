@@ -7,10 +7,10 @@ import (
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
-	"github.com/vova616/chipmunk"
+	"github.com/jakecoffman/physics"
 )
 
-var space *chipmunk.Space
+var space *physics.Space
 
 var Input *input
 var Players map[int8]*Player

@@ -5,15 +5,15 @@ import (
 	"log"
 	"net"
 
-	"github.com/vova616/chipmunk/vect"
+	"github.com/jakecoffman/physics"
 )
 
 // message sent to clients: update location information
 type Location struct {
 	ID                     int8
-	X, Y                   float32
-	Vx, Vy                 float32
-	Angle, AngularVelocity float32
+	X, Y                   float64
+	Vx, Vy                 float64
+	Angle, AngularVelocity float64
 }
 
 func (l *Location) Handle(addr *net.UDPAddr) error {
@@ -28,10 +28,10 @@ func (l *Location) Handle(addr *net.UDPAddr) error {
 		return nil
 	}
 	// TODO: check if the change is insignificant and ignore it if that's the case
-	body := player.Shape.Body
-	body.SetPosition(vect.Vect{vect.Float(l.X), vect.Float(l.Y)})
+	body := player.Shape.Body()
+	body.SetPosition(&physics.Vector{l.X, l.Y})
 	body.SetVelocity(l.Vx, l.Vy)
-	body.SetAngle(vect.Float(l.Angle))
+	body.SetAngle(l.Angle)
 	body.SetAngularVelocity(l.AngularVelocity)
 	return nil
 }
