@@ -17,7 +17,7 @@ const (
 	playerWidth  = 32.0
 	playerHeight = 32.0
 
-	maxSpeed = 100.0
+	maxSpeed  = 50.0
 	maxTorque = 0.05
 )
 
@@ -39,9 +39,8 @@ func NewPlayer() *Player {
 
 	radius := (&physics.Vector{playerWidth, playerHeight}).Length()
 	body := space.AddBody(physics.NewBody(1, physics.MomentForBox(1, playerWidth, playerHeight)))
-	body.SetPosition(&physics.Vector{startX, startY})
-	shape := physics.NewBox(body, playerWidth, playerHeight, radius)
-	space.AddShape(shape)
+	body.SetPosition(&physics.Vector{10, 10})
+	shape := space.AddShape(physics.NewBox(body, playerWidth, playerHeight, radius))
 	shape.E = 0
 	shape.U = 5
 
@@ -96,8 +95,8 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	p.Image.Fill(color.White)
 	opts = &ebiten.DrawImageOptions{}
 	opts.GeoM.Translate(-playerWidth/2, -playerHeight/2)
-	opts.GeoM.Rotate(float64(p.Shape.Body().Angle()))
-	opts.GeoM.Translate(float64(p.Shape.Body().Position().X), float64(p.Shape.Body().Position().Y))
+	opts.GeoM.Rotate(p.Shape.Body().Angle() * physics.DegreeConst)
+	opts.GeoM.Translate(p.Shape.Body().Position().X, p.Shape.Body().Position().Y)
 	screen.DrawImage(p.Image, opts)
 
 	if p.IsLocal() {

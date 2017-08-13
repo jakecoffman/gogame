@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"net"
+	"github.com/jakecoffman/physics"
 )
 
 // Sent to server only: Move relays inputs related to movement
@@ -25,8 +26,8 @@ func (m *Move) Handle(addr *net.UDPAddr) error {
 	}
 
 	player.Shape.Body().SetAngularVelocity(m.Turn)
-	vx2 := math.Cos(float64(player.Shape.Body().Angle()))
-	vy2 := math.Sin(float64(player.Shape.Body().Angle()))
+	vx2 := math.Cos(float64(player.Shape.Body().Angle() * physics.DegreeConst))
+	vy2 := math.Sin(float64(player.Shape.Body().Angle() * physics.DegreeConst))
 	svx2, svy2 := m.Throttle*vx2, m.Throttle*vy2
 	player.Shape.Body().SetVelocity(svx2, svy2)
 
