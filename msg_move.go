@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"net"
+
 	"github.com/jakecoffman/physics"
 )
 
@@ -12,6 +13,11 @@ import (
 type Move struct {
 	Turn, Throttle float64
 }
+
+const (
+	maxSpeed = 50
+	maxTurn  = .1
+)
 
 func (m *Move) Handle(addr *net.UDPAddr) error {
 	if !IsServer {
@@ -25,10 +31,10 @@ func (m *Move) Handle(addr *net.UDPAddr) error {
 		return nil
 	}
 
-	player.Shape.Body().SetAngularVelocity(m.Turn)
-	vx2 := math.Cos(float64(player.Shape.Body().Angle() * physics.DegreeConst))
-	vy2 := math.Sin(float64(player.Shape.Body().Angle() * physics.DegreeConst))
-	svx2, svy2 := m.Throttle*vx2, m.Throttle*vy2
+	player.Shape.Body().SetAngularVelocity(m.Turn * maxTurn)
+	vx2 := math.Cos(player.Shape.Body().Angle() * physics.DegreeConst)
+	vy2 := math.Sin(player.Shape.Body().Angle() * physics.DegreeConst)
+	svx2, svy2 := m.Throttle*vx2*maxSpeed, m.Throttle*vy2*maxSpeed
 	player.Shape.Body().SetVelocity(svx2, svy2)
 
 	// Send immediate location update to everyone

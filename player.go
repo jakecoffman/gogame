@@ -12,13 +12,10 @@ import (
 )
 
 const (
-	startX       = 128.0
-	startY       = 128.0
+	startX       = 20.0
+	startY       = 20.0
 	playerWidth  = 32.0
 	playerHeight = 32.0
-
-	maxSpeed  = 50.0
-	maxTorque = 0.05
 )
 
 type Player struct {
@@ -39,7 +36,7 @@ func NewPlayer() *Player {
 
 	radius := (&physics.Vector{playerWidth, playerHeight}).Length()
 	body := space.AddBody(physics.NewBody(1, physics.MomentForBox(1, playerWidth, playerHeight)))
-	body.SetPosition(&physics.Vector{10, 10})
+	body.SetPosition(&physics.Vector{startX, startY})
 	shape := space.AddShape(physics.NewBox(body, playerWidth, playerHeight, radius))
 	shape.E = 0
 	shape.U = 5
@@ -66,18 +63,18 @@ func (p *Player) Update() {
 	if p.IsLocal() {
 		var turn float64
 		if Input.keyState[ebiten.KeyA] == 1 {
-			turn = maxTorque * -1
+			turn = -1
 		}
 		if Input.keyState[ebiten.KeyD] == 1 {
-			turn = maxTorque
+			turn = 1
 		}
 
 		var throttle float64
 		if Input.keyState[ebiten.KeyW] == 1 {
-			throttle = maxSpeed * -1
+			throttle = -1
 		}
 		if Input.keyState[ebiten.KeyS] == 1 {
-			throttle = maxSpeed
+			throttle = 1
 		}
 
 		bin, err := (&Move{Turn: turn, Throttle: throttle}).MarshalBinary()
@@ -96,10 +93,13 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	opts = &ebiten.DrawImageOptions{}
 	opts.GeoM.Translate(-playerWidth/2, -playerHeight/2)
 	opts.GeoM.Rotate(p.Shape.Body().Angle() * physics.DegreeConst)
-	opts.GeoM.Translate(p.Shape.Body().Position().X, p.Shape.Body().Position().Y)
+	pos := p.Shape.BB().Center()
+	opts.GeoM.Translate(pos.X, pos.Y)
 	screen.DrawImage(p.Image, opts)
 
 	if p.IsLocal() {
-		ebitenutil.DebugPrint(screen, fmt.Sprintf("\nPlayer %v\nPing %v", p.Shape.Body().Position(), LastPing.Get()))
+		str := fmt.Sprintf("\nPlayer %v\nRot %v\nPing %v",
+			p.Shape.Body().Position(), p.Shape.Body().Angle(), LastPing.Get())
+		ebitenutil.DebugPrint(screen, str)
 	}
 }
