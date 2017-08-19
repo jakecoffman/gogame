@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	startX       = 20.0
-	startY       = 20.0
+	startX       = 128.0
+	startY       = 128.0
 	playerWidth  = 32.0
 	playerHeight = 32.0
 )
@@ -35,11 +35,13 @@ func NewPlayer() *Player {
 	square, _ := ebiten.NewImage(playerWidth, playerHeight, ebiten.FilterNearest)
 
 	radius := (&physics.Vector{playerWidth, playerHeight}).Length()
-	body := space.AddBody(physics.NewBody(1, physics.MomentForBox(1, playerWidth, playerHeight)))
-	body.SetPosition(&physics.Vector{startX, startY})
+	moment := physics.MomentForBox(1, playerWidth, playerHeight)
+	body := space.AddBody(physics.NewBody(1, moment))
+	body.SetPosition(&physics.Vector{0, 15})
+
 	shape := space.AddShape(physics.NewBox(body, playerWidth, playerHeight, radius))
 	shape.E = 0
-	shape.U = 5
+	shape.U = 0.7
 
 	return &Player{
 		Image: square,
@@ -93,7 +95,9 @@ func (p *Player) Draw(screen *ebiten.Image) {
 	opts = &ebiten.DrawImageOptions{}
 	opts.GeoM.Translate(-playerWidth/2, -playerHeight/2)
 	opts.GeoM.Rotate(p.Shape.Body().Angle() * physics.DegreeConst)
-	pos := p.Shape.BB().Center()
+	opts.GeoM.Translate(playerWidth/2, playerHeight/2)
+	opts.GeoM.Translate(Size/2, Size/2)
+	pos := p.Shape.Body().Position()
 	opts.GeoM.Translate(pos.X, pos.Y)
 	screen.DrawImage(p.Image, opts)
 
